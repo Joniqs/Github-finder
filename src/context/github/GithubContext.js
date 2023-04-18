@@ -8,20 +8,19 @@ const Server_URL = process.env.REACT_APP_SERVER_URL
 export const GithubProvider = ({children}) => {
   const initialState = {
     users: [],
-    loading: false
+    user: {},
+    loading: false,
   }
 
   const [state, dispatch] = useReducer(githubReducer, initialState)
 
-  // Get initial users (testing purposes)
+  // Get search users
   const searchUsers = async (text) => {
     setLoading()
   
     const params = new URLSearchParams({
       q: text,
     })
-  
-    console.log('Search text:', text);
   
     const response = await fetch(`${Server_URL}/search/users?${params}`, {
       credentials: 'include',
@@ -35,6 +34,29 @@ export const GithubProvider = ({children}) => {
     })
   }
 
+  // Get single user
+  const getUser = async (login) => {
+    setLoading()
+  
+    const response = await fetch(`${Server_URL}/user/${login}`, {
+      credentials: 'include',
+    })
+
+    if(response.status === 404) {
+      window.location = '/notfound'
+    } else {
+
+    const data = await response.json()
+
+    console.log(data)
+  
+    dispatch({
+      type: 'GET_USER',
+      payload: data,
+    })
+  }
+}
+
   // Clear users from state
   const clearUsers = () => dispatch({type: 'CLEAR_USERS'})
 
@@ -44,8 +66,10 @@ export const GithubProvider = ({children}) => {
   return <GithubContext.Provider value={{
     users: state.users,
     loading: state.loading,
+    user: state.user,
     searchUsers,
-    clearUsers
+    clearUsers,
+    getUser
   }}>
     {children}
   </GithubContext.Provider>
